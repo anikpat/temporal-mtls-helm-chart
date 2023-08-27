@@ -1,6 +1,6 @@
 ## Temporal io helm chart example with mtls enabled
 
-### The following chart contains mtls certificate generation code as mentioned in temporal's mtls [example repository](https://github.com/temporalio/samples-server/tree/main/tls/tls-simple)
+> The following chart contains mtls certificate generation code as mentioned in temporal's mtls [example repository](https://github.com/temporalio/samples-server/tree/main/tls/tls-simple)
 
 ### Assumptions:
 - I have used Azure cloud for the example, you can change the creds and alter az cli commands according to your requirement.

@@ -1,0 +1,123 @@
+Global:
+  certPathCluster: &certPathCluster "/etc/certs/temporal-cluster"
+  certPathClient: &certPathClient "/etc/certs/temporal-client"
+  certPathRootCA: &certPathRootCA "/etc/certs/temporal-ca"
+server:
+  additionalVolumes:
+    - name: temporal-cluster
+      secret:
+        secretName: temporal-cluster
+        defaultMode: 420
+    - name: temporal-ca
+      secret:
+        secretName: temporal-ca
+        defaultMode: 420
+    - name: temporal-client
+      secret:
+        secretName: temporal-client
+        defaultMode: 420
+  additionalVolumeMounts:
+    - name: temporal-cluster
+      mountPath: *certPathCluster
+    - name: temporal-ca
+      mountPath: *certPathRootCA
+    - name: temporal-client
+      mountPath: *certPathClient
+
+  config:
+    persistence:
+      default:
+        driver: "sql"
+
+        sql:
+          driver: <DB_DRIVER>
+          host: <HOST>
+          port: <DB_PORT>
+          database: temporal
+          user: <DB_USERNAME>
+          existingSecret: <EXISTING_AKS_SECRET_DB_PASSWORD>
+          maxConns: 20
+          maxConnLifetime: "1h"
+          tls:
+            enabled: true
+          #  enableHostVerification: true
+          #  serverName: _HOST_ # this is strictly required when using serverless CRDB offerings
+
+      visibility:
+        driver: "sql"
+
+        sql:
+          driver: <DB_DRIVER>
+          host: <HOST>
+          port: <DB_PORT>
+          database: temporal_visibility
+          user: <DB_USERNAME>
+          existingSecret: <EXISTING_AKS_SECRET_DB_PASSWORD>
+          maxConns: 20
+          maxConnLifetime: "1h"
+          tls:
+            enabled: true
+          #  enableHostVerification: true
+          #  serverName: _HOST_ # this is strictly required when using serverless CRDB offerings
+
+
+
+
+web:
+  enabled: true
+  image:
+    repository: temporalio/ui
+    tag: 2.16.2
+    pullPolicy: IfNotPresent
+
+  ingress:
+    annotations:
+      kubernetes.io/ingress.class: azure/application-gateway
+    enabled: true
+    hosts:
+      - <YOUR DOMAIN NAME>
+
+  additionalEnv:
+    - name: TEMPORAL_TLS_CA
+      value: /etc/certs/temporal-ca/tls.crt
+    - name: TEMPORAL_TLS_CERT
+      value: /etc/certs/temporal-cluster/tls.crt
+    - name: TEMPORAL_TLS_KEY
+      value: /etc/certs/temporal-cluster/tls.key
+    - name: TEMPORAL_TLS_SERVER_NAME
+      value: temporal-server
+
+cassandra:
+  enabled: false
+
+mysql:
+  enabled: false
+
+postgresql:
+  enabled: true
+
+prometheus:
+  enabled: false
+
+grafana:
+  enabled: false
+
+elasticsearch:
+  enabled: false
+
+schema:
+  setup:
+    enabled: false
+  update:
+    enabled: false
+
+tls:
+  enabled: true
+  frontend:
+    requireClientAuth: true
+  internode:
+    requireClientAuth: true
+  serverName: temporal-server
+  rootCAName: *certPathRootCA
+  clusterCertName: *certPathCluster
+  clientCertName: *certPathClient

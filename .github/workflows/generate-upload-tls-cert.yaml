@@ -1,0 +1,54 @@
+name: Generate and Upload TLS Certificate to AKS
+
+on:
+  workflow_dispatch:
+    inputs:
+      resource_group:
+        type: string
+        description: The name of the resource group to deploy to
+        required: true
+
+      cluster_name:
+        type: string
+        description: The name of the cluster to deploy to
+        required: true
+
+      cert_path:
+        type: string
+        description: Path where certificates are stored
+        required: true
+
+      namespace:
+        type: string
+        description: AKS namespace to deploy to
+        required: true
+
+jobs:
+  upload-certificate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: "Run bash script to generate self signed certs"
+        run: |
+          cd ${{ inputs.cert_path }}
+          chmod +x ./generate-test-certs.sh
+          ./generate-test-certs.sh
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.azure_creds }}
+      
+      - name: Azure CLI script
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az aks install-cli
+            az aks get-credentials --resource-group ${{ inputs.resource_group }} --name ${{ inputs.cluster_name }}
+            cd ${{ inputs.cert_path }}
+            chmod +x ./upload-certs.sh
+            ./upload-certs.sh
+            

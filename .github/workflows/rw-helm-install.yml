@@ -1,0 +1,78 @@
+name: RW - Helm install
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+
+      resource_group:
+        type: string
+        description: The name of the resource group to deploy to
+        required: true
+
+      cluster_name:
+        type: string
+        description: The name of the cluster to deploy to
+        required: true
+
+      app_name:
+        type: string
+        description: The name of the app to deploy
+        required: true
+
+      helm_chart_path:
+        type: string
+        description: The path to the app to deploy from root
+        required: true
+
+      helm_chart_values:
+        type: string
+        description: The name of the values file to use
+        required: true
+
+      namespace:
+        type: string
+        description: AKS namespace to deploy to
+        required: true
+
+    secrets:
+      azure_creds:
+        required: true
+
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.12.0'
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.azure_creds }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ inputs.resource_group }}
+          cluster-name: ${{ inputs.cluster_name }}
+
+      - name: Deploy the Helm chart
+        run: |
+          cd ${{ inputs.helm_chart_path }}
+          helm dependency update
+          helm upgrade \
+            --install ${{ inputs.app_name }} . \
+            --values ${{ inputs.helm_chart_values }}.yaml \
+            --namespace ${{ inputs.namespace }} \

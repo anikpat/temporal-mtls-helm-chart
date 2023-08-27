@@ -1,0 +1,27 @@
+name: Temporal update database schema
+
+on: workflow_dispatch
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  upgrade_db:
+    uses: ./.github/workflows/rw-temporal-update-database.yml
+    with:
+      github_env: github-env
+      SQL_HOST: database-host
+      SQL_PORT: database-port
+      SQL_PLUGIN: database-plugin
+      SQL_USER: database-username
+      secret_name: kv-ref-for-database-password
+      kv_name: azure-kv-name
+      database_server_name: mysql-database-name
+      database_resource_group: database-resource-group-name
+    secrets:
+      azure_creds: ${{ secrets.AZURE_SP_SECRET }}

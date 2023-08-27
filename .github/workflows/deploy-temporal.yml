@@ -1,0 +1,26 @@
+name: Deploy Temporal to AKS
+
+on: workflow_dispatch
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    name: Deploy Temporal Server
+    uses: ./.github/workflows/rw-helm-install.yml
+    with:
+      github_env: <GITHUB_ENV>
+      resource_group: <NAME_OF_RESOURCE_GROUP_WHERE_AKS_LIVES>
+      cluster_name: <NAME_OF_THE_AKS_CLUSTER>
+      helm_chart_path: <PATH_OF_HELM_CHART>
+      helm_chart_values: <CHART_VALUES>
+      app_name: temporal
+      namespace: <AKS_NAMESPACE>
+    secrets:
+      azure_creds: ${{ secrets.AZURE_SP_SECRET }}

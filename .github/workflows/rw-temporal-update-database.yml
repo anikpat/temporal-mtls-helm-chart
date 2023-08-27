@@ -1,0 +1,98 @@
+name: Temporal upgrade database
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+
+      SQL_HOST:
+        type: string
+        description: Database host address
+        required: true
+
+      SQL_PORT:
+        type: string
+        description: Database port
+        required: true
+
+      SQL_PLUGIN:
+        type: string
+        description: Path where certificates are stored
+        required: true
+
+      SQL_USER:
+        type: string
+        description: Database user
+        required: true
+
+      secret_name:
+        type: string
+        description: Keyvault secret name
+        required: true
+
+      kv_name:
+        type: string
+        description: Keyvault name
+        required: true
+
+      database_resource_group:
+        type: string
+        required: true
+
+      database_server_name:
+        type: string
+        required: true
+
+
+    secrets:
+      azure_creds:
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+    run:
+        shell: bash
+
+
+jobs:
+  upgrade_temporal_database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout Repo'
+        uses: actions/checkout@v3
+
+      - name: "Azure Login"
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.azure_creds }}
+
+      - name: 'Get database details'
+        env:
+          SQL_PLUGIN: ${{ inputs.SQL_PLUGIN }}
+          SQL_HOST: ${{ inputs.SQL_HOST }}
+          SQL_PORT: ${{ inputs.SQL_PORT }}
+          SQL_USER: ${{ inputs.SQL_USER }}
+        uses: azure/cli@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            export SQL_PASSWORD=$(az keyvault secret show --name ${{ inputs.secret_name }} --vault-name ${{ inputs.kv_name }} --query value -o tsv)
+            temporal=$( az postgres flexible-server db list --server-name ${{ inputs.database_server_name }} --resource-group ${{ inputs.database_resource_group }} --query "[?name=='temporal'].name" --output table)
+            temporal_visibility=$( az postgres flexible-server db list --server-name ${{ inputs.database_server_name }} --resource-group ${{ inputs.database_resource_group }} --query "[?name=='temporal_visibility'].name" --output table)
+            
+            if [ -z "$temporal" ]; then
+                 az postgres flexible-server db create --resource-group ${{ inputs.database_resource_group }} --server-name ${{ inputs.database_server_name }} --database-name temporal
+            fi
+            
+            if [ -z "$temporal_visibility" ]; then
+                 az postgres flexible-server db create --resource-group ${{ inputs.database_resource_group }} --server-name ${{ inputs.database_server_name }} --database-name temporal_visibility
+            fi
+  
+  
+            cd cluster/setup-temporal-db
+            chmod +x ./setup-database.sh
+            ./setup-database.sh

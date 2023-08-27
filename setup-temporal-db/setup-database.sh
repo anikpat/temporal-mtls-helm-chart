@@ -1,10 +1,11 @@
 
-
+DB_PLUGIN=postgres # cassandra, mysql, postgres
+DB_VERSION=v12 # v57, v8, v12
 MAIN_DBNAME=temporal
 VISIBILITY_DBNAME=temporal_visibility
 
-MAIN_SCHEMA_DIR=schema/postgresql/v12/temporal/versioned
-VISIBILITY_SCHEMA_DIR=schema/postgresql/v12/visibility/versioned
+MAIN_SCHEMA_DIR=schema/$DB_PLUGIN/$DB_VERSION/temporal/versioned
+VISIBILITY_SCHEMA_DIR=schema/$DB_PLUGIN/$DB_VERSION/visibility/versioned
 
 # main database
 ./temporal-sql-tool --tls --db "${MAIN_DBNAME}" create

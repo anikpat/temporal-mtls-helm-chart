@@ -13,4 +13,9 @@
 - Change the values in dev-values.yaml according to your requirement.
 - Pipelines have been created as examples to run the helm chart to deploy to an existing kubernetes cluster.
 
+### Note
+> It is not recommended to use self-signed certificates in production. Please use a valid CA certificate.
+
+
+### Temporal version
 > Current Temporal version in the chart is [v1.21.2](https://github.com/temporalio/temporal/releases/tag/v1.21.2)
